@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Handwritten Digit Recognizer</title>
+    <style>
+        #canvas {
+            border: 1px solid black;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Handwritten Digit Recognizer</h1>
+    <canvas id="canvas" width="200" height="200"></canvas>
+    <br>
+    <button onclick="clearCanvas()">Clear</button>
+    <button onclick="predictDigit()">Predict</button>
+    <br><br>
+    <h2>Prediction: <span id="prediction"></span></h2>
+    <script>
+        var canvas = document.getElementById("canvas");
+        var ctx = canvas.getContext("2d");
+        var isDrawing = false;
+
+        canvas.addEventListener("mousedown", startDrawing);
+        canvas.addEventListener("mousemove", draw);
+        canvas.addEventListener("mouseup", stopDrawing);
+
+        function startDrawing(e) {
+            isDrawing = true;
+            draw(e);
+        }
+
+        function stopDrawing() {
+            isDrawing = false;
+        }
+
+        function draw(e) {
+            if (!isDrawing) {
+                return;
+            }
+            var x = e.offsetX;
+            var y = e.offsetY;
+            ctx.fillRect(x, y, 10, 10);
+        }
+
+        function clearCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        function predictDigit() {
+            var imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            var data = imgData.data;
+            var imgDataArray = new Array();
+            for (var i = 0; i < data.length; i += 4) {
+                imgDataArray.push(data[i + 3] / 255.0);
+            }
+            fetch("/predict", {
+                    method: "POST",
+                    body: JSON.stringify(imgDataArray),
+                    headers: {
+                        "Content-Type": "application/json"
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log(data);
+                    document.getElementById("prediction").innerText = data["prediction"];
+                });
+        }
+    </script>
+</body>
+
+</html>
